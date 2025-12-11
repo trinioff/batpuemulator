@@ -11,7 +11,7 @@ Emulateur batpu avec flask
 ### Configuration
 1. Clonez le repo :
    ```bash
-   git clone https://github.com/trinioff/batpuemulator
+   git clone https://github.com/trinioff/batpuemulator.git
    cd BatPU-2-main
    ```
 
