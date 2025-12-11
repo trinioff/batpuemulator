@@ -8,46 +8,51 @@
     <link
         href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap"
         rel="stylesheet">
+    <!-- GridStack CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/gridstack@10.0.0/dist/gridstack.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/gridstack@10.0.0/dist/gridstack-extra.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <header>
         <h1>⚡ BatPU-2 Simulator</h1>
-        <p class="subtitle">Émulateur assembleur interactif</p>
+        <p class="subtitle">Émulateur assembleur interactif • <span class="hint">Glissez les panneaux pour les
+                réorganiser</span></p>
+        <div class="header-actions">
+            <button class="btn btn-outline btn-sm" onclick="resetLayout()">🔄 Reset Layout</button>
+        </div>
     </header>
 
     <div class="container">
-        <div class="grid">
-            <div class="left">
-                <div class="panel">
-                    <div class="panel-header">📝 Code Assembleur</div>
+        <div class="grid-stack" id="grid">
+            <!-- Code Editor -->
+            <div class="grid-stack-item" gs-id="code" gs-x="0" gs-y="0" gs-w="4" gs-h="8" gs-min-w="3" gs-min-h="4">
+                <div class="grid-stack-item-content panel">
+                    <div class="panel-header drag-handle">
+                        <span>📝 Code Assembleur</span>
+                    </div>
                     <div class="panel-body">
                         <div class="dropzone" id="dropzone">
                             <div class="dropzone-icon">📁</div>
-                            <h3>Glissez un fichier .as ici</h3>
-                            <p>ou cliquez pour sélectionner</p>
+                            <h3>Glissez un fichier .as</h3>
                         </div>
                         <input type="file" id="fileInput" accept=".as,.asm" hidden>
-
                         <div id="msg" class="msg"></div>
-
                         <div class="editor-container">
                             <div class="editor-highlight" id="highlight"></div>
                             <textarea class="editor-textarea" id="code" spellcheck="false"
-                                placeholder="; Écrivez votre code assembleur ici">define show_number 250
+                                placeholder="; Écrivez votre code ici">define show_number 250
 
 ldi r1 10
 ldi r2 25
-add r1 r2 r3        ; r3 = 35
+add r1 r2 r3
 
 ldi r15 show_number
-str r15 r3          ; Affiche r3 (35)
+str r15 r3
 
-hlt
-</textarea>
+hlt</textarea>
                         </div>
-
                         <div class="controls">
                             <button class="btn btn-primary" onclick="load()">⚙️ Assembler</button>
                             <button class="btn btn-success" onclick="step()">⏭️ Step</button>
@@ -56,21 +61,32 @@ hlt
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="panel" style="margin-top: 16px;">
-                    <div class="panel-header">📟 Désassemblage</div>
+            <!-- Disassembly -->
+            <div class="grid-stack-item" gs-id="disasm" gs-x="0" gs-y="8" gs-w="4" gs-h="5" gs-min-w="2" gs-min-h="2">
+                <div class="grid-stack-item-content panel">
+                    <div class="panel-header drag-handle">
+                        <span>📟 Désassemblage</span>
+                    </div>
                     <div class="panel-body">
                         <div class="disasm" id="disasm">
-                            <p style="color: var(--text-muted); text-align: center; padding: 20px;">Chargez un programme
-                            </p>
+                            <p class="placeholder-text">Chargez un programme</p>
+                        </div>
+                        <div class="binary-inspector">
+                            <span class="binary-label">BINAIRE</span>
+                            <span class="binary-value" id="binaryValue">-</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="right">
-                <div class="panel">
-                    <div class="panel-header">📊 État CPU</div>
+            <!-- CPU State -->
+            <div class="grid-stack-item" gs-id="cpu" gs-x="4" gs-y="0" gs-w="4" gs-h="7" gs-min-w="3" gs-min-h="3">
+                <div class="grid-stack-item-content panel">
+                    <div class="panel-header drag-handle">
+                        <span>📊 État CPU</span>
+                    </div>
                     <div class="panel-body">
                         <div class="status-grid">
                             <div class="status-item">
@@ -78,11 +94,11 @@ hlt
                                 <div class="status-value" id="pc">0</div>
                             </div>
                             <div class="status-item">
-                                <div class="status-label">Instructions</div>
+                                <div class="status-label">Instr</div>
                                 <div class="status-value" id="instr">0</div>
                             </div>
                             <div class="status-item">
-                                <div class="status-label">Programme</div>
+                                <div class="status-label">Prog</div>
                                 <div class="status-value" id="prog">0</div>
                             </div>
                             <div class="status-item">
@@ -90,34 +106,55 @@ hlt
                                 <div class="status-value running" id="state">READY</div>
                             </div>
                         </div>
-
                         <div class="output-box">
-                            <div class="output-label">🖥️ Sortie / Résultat</div>
+                            <div class="output-label">🖥️ Sortie</div>
                             <div class="output-value" id="output">-</div>
                             <div class="output-chips" id="chips"></div>
                         </div>
-
-                        <div style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 8px;">Registres</div>
+                        <div class="section-title">Registres</div>
                         <div class="reg-grid" id="regs"></div>
-
                         <div class="flags">
                             <div class="flag" id="zf">Z = 0</div>
                             <div class="flag" id="cf">C = 0</div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="panel" style="margin-top: 16px;">
-                    <div class="panel-header">💾 Mémoire</div>
+            <!-- Memory -->
+            <div class="grid-stack-item" gs-id="memory" gs-x="4" gs-y="7" gs-w="4" gs-h="6" gs-min-w="2" gs-min-h="2">
+                <div class="grid-stack-item-content panel">
+                    <div class="panel-header drag-handle">
+                        <span>💾 Mémoire</span>
+                    </div>
                     <div class="panel-body">
                         <div class="memory" id="mem"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen -->
+            <div class="grid-stack-item" gs-id="screen" gs-x="8" gs-y="0" gs-w="4" gs-h="13" gs-min-w="3" gs-min-h="4">
+                <div class="grid-stack-item-content panel">
+                    <div class="panel-header drag-handle">
+                        <span>🖥️ Écran (32×32)</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="screen-container">
+                            <div class="screen-grid" id="screen"></div>
+                        </div>
+                        <div class="screen-info">
+                            <span>X:240 Y:241 Draw:242 Clear:243</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="script.js" defer></script>
+    <!-- GridStack JS -->
+    <script src="https://cdn.jsdelivr.net/npm/gridstack@10.0.0/dist/gridstack-all.min.js"></script>
+    <script src="script.js"></script>
 </body>
 
 </html>

@@ -100,7 +100,8 @@ class SimulatorHandler(SimpleHTTPRequestHandler):
             lines.append({
                 'addr': i,
                 'text': cpu.disassemble(instr),
-                'current': i == cpu.pc
+                'current': i == cpu.pc,
+                'binary': f'{instr:016b}'
             })
         self.send_json({'disasm': lines})
     

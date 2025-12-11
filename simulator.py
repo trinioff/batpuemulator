@@ -288,6 +288,8 @@ class BatPU2:
             chars = [' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '.', '!', '?']
             if 0 <= value < len(chars):
                 self.char_buffer.append(chars[value])
+            elif 32 <= value <= 126: # ASCII text fallback
+                self.char_buffer.append(chr(value))
             else:
                 self.char_buffer.append('?')
         elif port_name == 10:  # show_number
