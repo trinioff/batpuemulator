@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BatPU-2 Simulator</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header>
+        <h1>⚡ BatPU-2 Simulator</h1>
+        <p class="subtitle">Émulateur assembleur interactif</p>
+    </header>
+
+    <div class="container">
+        <div class="grid">
+            <div class="left">
+                <div class="panel">
+                    <div class="panel-header">📝 Code Assembleur</div>
+                    <div class="panel-body">
+                        <div class="dropzone" id="dropzone">
+                            <div class="dropzone-icon">📁</div>
+                            <h3>Glissez un fichier .as ici</h3>
+                            <p>ou cliquez pour sélectionner</p>
+                        </div>
+                        <input type="file" id="fileInput" accept=".as,.asm" hidden>
+
+                        <div id="msg" class="msg"></div>
+
+                        <div class="editor-container">
+                            <div class="editor-highlight" id="highlight"></div>
+                            <textarea class="editor-textarea" id="code" spellcheck="false"
+                                placeholder="; Écrivez votre code assembleur ici">define show_number 250
+
+ldi r1 10
+ldi r2 25
+add r1 r2 r3        ; r3 = 35
+
+ldi r15 show_number
+str r15 r3          ; Affiche r3 (35)
+
+hlt
+</textarea>
+                        </div>
+
+                        <div class="controls">
+                            <button class="btn btn-primary" onclick="load()">⚙️ Assembler</button>
+                            <button class="btn btn-success" onclick="step()">⏭️ Step</button>
+                            <button class="btn btn-success" onclick="run()">▶️ Run</button>
+                            <button class="btn btn-warning" onclick="reset()">🔄 Reset</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-top: 16px;">
+                    <div class="panel-header">📟 Désassemblage</div>
+                    <div class="panel-body">
+                        <div class="disasm" id="disasm">
+                            <p style="color: var(--text-muted); text-align: center; padding: 20px;">Chargez un programme
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right">
+                <div class="panel">
+                    <div class="panel-header">📊 État CPU</div>
+                    <div class="panel-body">
+                        <div class="status-grid">
+                            <div class="status-item">
+                                <div class="status-label">PC</div>
+                                <div class="status-value" id="pc">0</div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-label">Instructions</div>
+                                <div class="status-value" id="instr">0</div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-label">Programme</div>
+                                <div class="status-value" id="prog">0</div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-label">État</div>
+                                <div class="status-value running" id="state">READY</div>
+                            </div>
+                        </div>
+
+                        <div class="output-box">
+                            <div class="output-label">🖥️ Sortie / Résultat</div>
+                            <div class="output-value" id="output">-</div>
+                            <div class="output-chips" id="chips"></div>
+                        </div>
+
+                        <div style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 8px;">Registres</div>
+                        <div class="reg-grid" id="regs"></div>
+
+                        <div class="flags">
+                            <div class="flag" id="zf">Z = 0</div>
+                            <div class="flag" id="cf">C = 0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-top: 16px;">
+                    <div class="panel-header">💾 Mémoire</div>
+                    <div class="panel-body">
+                        <div class="memory" id="mem"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js" defer></script>
+</body>
+
+</html>
