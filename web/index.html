@@ -14,35 +14,46 @@
     <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
+<body class="theme-dark">
     <header>
-        <h1>⚡ BatPU-2 Simulator</h1>
-        <p class="subtitle">Émulateur assembleur interactif • <span class="hint">Glissez les panneaux pour les
-                réorganiser</span></p>
+        <div class="header-left">
+            <h1><i data-lucide="zap"></i> BatPU-2 Simulator</h1>
+            <p class="subtitle">Émulateur assembleur interactif</p>
+        </div>
         <div class="header-actions">
-            <button class="btn btn-outline btn-sm" onclick="resetLayout()">🔄 Reset Layout</button>
+            <div class="theme-switcher">
+                <button class="theme-btn active" data-theme="dark" title="Dark Theme"><i
+                        data-lucide="moon"></i></button>
+                <button class="theme-btn" data-theme="light" title="Light Theme"><i data-lucide="sun"></i></button>
+                <button class="theme-btn" data-theme="crt" title="CRT Green"><i data-lucide="monitor"></i></button>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="resetLayout()"><i data-lucide="rotate-ccw"></i> Reset
+                Layout</button>
         </div>
     </header>
 
     <div class="container">
         <div class="grid-stack" id="grid">
             <!-- Code Editor -->
-            <div class="grid-stack-item" gs-id="code" gs-x="0" gs-y="0" gs-w="4" gs-h="8" gs-min-w="3" gs-min-h="4">
+            <div class="grid-stack-item" gs-id="code" gs-x="0" gs-y="0" gs-w="4" gs-h="6" gs-min-w="3" gs-min-h="4">
                 <div class="grid-stack-item-content panel">
                     <div class="panel-header drag-handle">
-                        <span>📝 Code Assembleur</span>
+                        <span><i data-lucide="file-code"></i> Code Assembleur</span>
+                        <span class="line-count" id="lineCount">0 lignes</span>
                     </div>
                     <div class="panel-body">
                         <div class="dropzone" id="dropzone">
-                            <div class="dropzone-icon">📁</div>
+                            <i data-lucide="folder-open" class="dropzone-icon"></i>
                             <h3>Glissez un fichier .as</h3>
                         </div>
                         <input type="file" id="fileInput" accept=".as,.asm" hidden>
                         <div id="msg" class="msg"></div>
-                        <div class="editor-container">
-                            <div class="editor-highlight" id="highlight"></div>
-                            <textarea class="editor-textarea" id="code" spellcheck="false"
-                                placeholder="; Écrivez votre code ici">define show_number 250
+                        <div class="editor-wrapper">
+                            <div class="line-numbers" id="lineNumbers"></div>
+                            <div class="editor-container">
+                                <div class="editor-highlight" id="highlight"></div>
+                                <textarea class="editor-textarea" id="code" spellcheck="false"
+                                    placeholder="; Écrivez votre code ici">define show_number 250
 
 ldi r1 10
 ldi r2 25
@@ -52,22 +63,28 @@ ldi r15 show_number
 str r15 r3
 
 hlt</textarea>
+                            </div>
                         </div>
                         <div class="controls">
-                            <button class="btn btn-primary" onclick="load()">⚙️ Assembler</button>
-                            <button class="btn btn-success" onclick="step()">⏭️ Step</button>
-                            <button class="btn btn-success" onclick="run()">▶️ Run</button>
-                            <button class="btn btn-warning" onclick="reset()">🔄 Reset</button>
+                            <button class="btn btn-primary" onclick="load()" title="Ctrl+Enter"><i
+                                    data-lucide="cog"></i> Assembler</button>
+                            <button class="btn btn-success" onclick="step()" title="F6"><i
+                                    data-lucide="step-forward"></i> Step</button>
+                            <button class="btn btn-success" onclick="run()" title="F5"><i data-lucide="play"></i>
+                                Run</button>
+                            <button class="btn btn-warning" onclick="reset()" title="F8"><i
+                                    data-lucide="refresh-cw"></i> Reset</button>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Disassembly -->
-            <div class="grid-stack-item" gs-id="disasm" gs-x="0" gs-y="8" gs-w="4" gs-h="5" gs-min-w="2" gs-min-h="2">
+            <div class="grid-stack-item" gs-id="disasm" gs-x="0" gs-y="6" gs-w="4" gs-h="5" gs-min-w="2" gs-min-h="2">
                 <div class="grid-stack-item-content panel">
                     <div class="panel-header drag-handle">
-                        <span>📟 Désassemblage</span>
+                        <span><i data-lucide="binary"></i> Désassemblage</span>
+                        <span class="hint-small">Clic = breakpoint</span>
                     </div>
                     <div class="panel-body">
                         <div class="disasm" id="disasm">
@@ -81,11 +98,94 @@ hlt</textarea>
                 </div>
             </div>
 
-            <!-- CPU State -->
-            <div class="grid-stack-item" gs-id="cpu" gs-x="4" gs-y="0" gs-w="4" gs-h="7" gs-min-w="3" gs-min-h="3">
+            <!-- Flags Panel -->
+            <div class="grid-stack-item" gs-id="flags" gs-x="4" gs-y="0" gs-w="2" gs-h="3" gs-min-w="2" gs-min-h="2">
                 <div class="grid-stack-item-content panel">
                     <div class="panel-header drag-handle">
-                        <span>📊 État CPU</span>
+                        <span><i data-lucide="flag"></i> Flags</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="flags-panel">
+                            <div class="flag-led-container">
+                                <div class="flag-led" id="flag-z">
+                                    <div class="led-indicator"></div>
+                                    <div class="flag-details">
+                                        <span class="flag-name">Zero (Z)</span>
+                                        <span class="flag-value" id="zf-value">0</span>
+                                    </div>
+                                </div>
+                                <div class="flag-led" id="flag-c">
+                                    <div class="led-indicator"></div>
+                                    <div class="flag-details">
+                                        <span class="flag-name">Carry (C)</span>
+                                        <span class="flag-value" id="cf-value">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flag-conditions">
+                                <span class="condition-label">Conditions:</span>
+                                <div class="conditions-grid">
+                                    <span class="cond" id="cond-eq">EQ</span>
+                                    <span class="cond" id="cond-ne">NE</span>
+                                    <span class="cond" id="cond-ge">GE</span>
+                                    <span class="cond" id="cond-lt">LT</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Call Stack Panel -->
+            <div class="grid-stack-item" gs-id="callstack" gs-x="6" gs-y="0" gs-w="2" gs-h="3" gs-min-w="2"
+                gs-min-h="2">
+                <div class="grid-stack-item-content panel">
+                    <div class="panel-header drag-handle">
+                        <span><i data-lucide="layers"></i> Call Stack</span>
+                        <span class="stack-depth" id="stack-depth">0/16</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="call-stack" id="callStack">
+                            <p class="placeholder-text">Vide</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- I/O Ports Panel -->
+            <div class="grid-stack-item" gs-id="ports" gs-x="8" gs-y="0" gs-w="4" gs-h="3" gs-min-w="3" gs-min-h="2">
+                <div class="grid-stack-item-content panel">
+                    <div class="panel-header drag-handle">
+                        <span><i data-lucide="plug"></i> I/O Ports</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="ports-grid">
+                            <div class="port-item">
+                                <span class="port-name">pixel_x</span>
+                                <span class="port-value" id="port-px">0</span>
+                            </div>
+                            <div class="port-item">
+                                <span class="port-name">pixel_y</span>
+                                <span class="port-value" id="port-py">0</span>
+                            </div>
+                            <div class="port-item">
+                                <span class="port-name">mode</span>
+                                <span class="port-value" id="port-mode">unsigned</span>
+                            </div>
+                            <div class="port-item">
+                                <span class="port-name">chars</span>
+                                <span class="port-value" id="port-chars">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CPU State -->
+            <div class="grid-stack-item" gs-id="cpu" gs-x="4" gs-y="3" gs-w="4" gs-h="5" gs-min-w="3" gs-min-h="3">
+                <div class="grid-stack-item-content panel">
+                    <div class="panel-header drag-handle">
+                        <span><i data-lucide="cpu"></i> État CPU</span>
                     </div>
                     <div class="panel-body">
                         <div class="status-grid">
@@ -107,44 +207,62 @@ hlt</textarea>
                             </div>
                         </div>
                         <div class="output-box">
-                            <div class="output-label">🖥️ Sortie</div>
+                            <div class="output-label"><i data-lucide="monitor"></i> Sortie</div>
                             <div class="output-value" id="output">-</div>
                             <div class="output-chips" id="chips"></div>
                         </div>
-                        <div class="section-title">Registres</div>
+                        <div class="section-title">Registres <span class="reg-format-toggle"
+                                onclick="toggleRegFormat()">[DEC/HEX/BIN]</span></div>
                         <div class="reg-grid" id="regs"></div>
-                        <div class="flags">
-                            <div class="flag" id="zf">Z = 0</div>
-                            <div class="flag" id="cf">C = 0</div>
-                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Memory -->
-            <div class="grid-stack-item" gs-id="memory" gs-x="4" gs-y="7" gs-w="4" gs-h="6" gs-min-w="2" gs-min-h="2">
+            <div class="grid-stack-item" gs-id="memory" gs-x="4" gs-y="8" gs-w="4" gs-h="3" gs-min-w="2" gs-min-h="2">
                 <div class="grid-stack-item-content panel">
                     <div class="panel-header drag-handle">
-                        <span>💾 Mémoire</span>
+                        <span><i data-lucide="hard-drive"></i> Mémoire</span>
+                        <div class="mem-controls">
+                            <button class="mem-page-btn active" onclick="setMemPage(0)">0-63</button>
+                            <button class="mem-page-btn" onclick="setMemPage(1)">64-127</button>
+                            <button class="mem-page-btn" onclick="setMemPage(2)">128-191</button>
+                            <button class="mem-page-btn" onclick="setMemPage(3)">192-255</button>
+                        </div>
                     </div>
                     <div class="panel-body">
-                        <div class="memory" id="mem"></div>
+                        <div class="memory-wrapper">
+                            <div class="memory" id="mem"></div>
+                            <div class="memory-ascii" id="memAscii"></div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Screen -->
-            <div class="grid-stack-item" gs-id="screen" gs-x="8" gs-y="0" gs-w="4" gs-h="13" gs-min-w="3" gs-min-h="4">
+            <div class="grid-stack-item" gs-id="screen" gs-x="8" gs-y="3" gs-w="4" gs-h="8" gs-min-w="3" gs-min-h="4">
                 <div class="grid-stack-item-content panel">
                     <div class="panel-header drag-handle">
-                        <span>🖥️ Écran (32×32)</span>
+                        <span><i data-lucide="tv"></i> Écran (32×32)</span>
+                        <div class="screen-controls">
+                            <select id="screenColor" onchange="setScreenColor(this.value)">
+                                <option value="green">Vert</option>
+                                <option value="amber">Ambre</option>
+                                <option value="white">Blanc</option>
+                                <option value="blue">Bleu</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="panel-body">
                         <div class="screen-container">
-                            <div class="screen-grid" id="screen"></div>
+                            <div class="screen-wrapper crt-effect">
+                                <div class="screen-grid" id="screen"></div>
+                                <div class="screen-cursor" id="screenCursor"></div>
+                                <div class="scanlines"></div>
+                            </div>
                         </div>
                         <div class="screen-info">
-                            <span>X:240 Y:241 Draw:242 Clear:243</span>
+                            <span>Cursor: (<span id="cursor-x">0</span>, <span id="cursor-y">0</span>)</span>
                         </div>
                     </div>
                 </div>
@@ -152,6 +270,33 @@ hlt</textarea>
         </div>
     </div>
 
+    <!-- Status Bar -->
+    <footer class="status-bar">
+        <div class="status-left">
+            <span class="status-item-bar">
+                <i data-lucide="clock"></i>
+                <span id="execTime">0ms</span>
+            </span>
+            <span class="status-item-bar">
+                <i data-lucide="activity"></i>
+                <span id="ips">0 IPS</span>
+            </span>
+        </div>
+        <div class="status-center">
+            <span class="keyboard-hints">
+                <kbd>F5</kbd> Run
+                <kbd>F6</kbd> Step
+                <kbd>F8</kbd> Reset
+                <kbd>Ctrl+Enter</kbd> Assemble
+            </span>
+        </div>
+        <div class="status-right">
+            <span id="lastAction">Prêt</span>
+        </div>
+    </footer>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <!-- GridStack JS -->
     <script src="https://cdn.jsdelivr.net/npm/gridstack@10.0.0/dist/gridstack-all.min.js"></script>
     <script src="script.js"></script>

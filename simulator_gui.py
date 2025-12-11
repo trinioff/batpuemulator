@@ -59,6 +59,8 @@ class SimulatorHandler(SimpleHTTPRequestHandler):
             self.run_program(body)
         elif self.path == '/api/reset':
             self.reset()
+        elif self.path == '/api/breakpoint':
+            self.toggle_breakpoint(body)
         else:
             self.send_error(404)
     
@@ -90,18 +92,26 @@ class SimulatorHandler(SimpleHTTPRequestHandler):
             'charBuffer': ''.join(cpu.char_buffer),
             'screen': cpu.screen,
             'outputs': outputs,
-            'lastInstruction': cpu.disassemble(cpu.program[max(0, cpu.pc-1)]) if cpu.program and cpu.pc > 0 else None
+            'lastInstruction': cpu.disassemble(cpu.program[max(0, cpu.pc-1)]) if cpu.program and cpu.pc > 0 else None,
+            # New fields for enhanced UI
+            'callStack': cpu.call_stack.copy(),
+            'pixelX': cpu.pixel_x,
+            'pixelY': cpu.pixel_y,
+            'signedMode': cpu.signed_mode,
+            'breakpoints': list(getattr(cpu, 'breakpoints', set()))
         })
     
     def get_disasm(self):
         global cpu
+        breakpoints = getattr(cpu, 'breakpoints', set())
         lines = []
         for i, instr in enumerate(cpu.program[:200]):
             lines.append({
                 'addr': i,
                 'text': cpu.disassemble(instr),
                 'current': i == cpu.pc,
-                'binary': f'{instr:016b}'
+                'binary': f'{instr:016b}',
+                'breakpoint': i in breakpoints
             })
         self.send_json({'disasm': lines})
     
@@ -142,15 +152,39 @@ class SimulatorHandler(SimpleHTTPRequestHandler):
         try:
             data = json.loads(body) if body else {}
             max_instr = data.get('max', 100000)
+            breakpoints = getattr(cpu, 'breakpoints', set())
             
             count = 0
             while count < max_instr and not cpu.halted and cpu.pc < len(cpu.program):
                 cpu.execute_one()
                 count += 1
+                # Stop at breakpoint (but not on first instruction if we're already there)
+                if count > 0 and cpu.pc in breakpoints:
+                    break
             
             self.get_state()
         except Exception as e:
             self.send_json({'error': str(e)})
+    
+    def toggle_breakpoint(self, body):
+        global cpu
+        try:
+            data = json.loads(body)
+            addr = data.get('addr', 0)
+            
+            if not hasattr(cpu, 'breakpoints'):
+                cpu.breakpoints = set()
+            
+            if addr in cpu.breakpoints:
+                cpu.breakpoints.remove(addr)
+                action = 'removed'
+            else:
+                cpu.breakpoints.add(addr)
+                action = 'added'
+            
+            self.send_json({'success': True, 'action': action, 'addr': addr, 'breakpoints': list(cpu.breakpoints)})
+        except Exception as e:
+            self.send_json({'success': False, 'message': str(e)})
     
     def reset(self):
         global cpu
